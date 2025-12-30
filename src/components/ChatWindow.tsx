@@ -92,14 +92,17 @@ export function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
           <div
             key={message.id}
             className={cn(
-              "max-w-[85%] p-3 rounded-lg text-sm",
+              "max-w-[85%] p-3 rounded-lg text-sm whitespace-pre-wrap",
               message.role === 'assistant'
                 ? "bg-muted text-foreground"
                 : "bg-primary text-primary-foreground ml-auto"
             )}
-          >
-            {message.content}
-          </div>
+            dangerouslySetInnerHTML={{
+              __html: message.content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br />')
+            }}
+          />
         ))}
       </div>
 
