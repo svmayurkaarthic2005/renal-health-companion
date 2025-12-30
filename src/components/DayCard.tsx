@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DayPlan } from '@/types/health';
 import { Button } from '@/components/ui/button';
+import { EditDayModal } from '@/components/EditDayModal';
 import { Check, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -11,7 +12,7 @@ interface DayCardProps {
 }
 
 export function DayCard({ day, onUpdate }: DayCardProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [bpSystolic, setBpSystolic] = useState(day.bp.systolic);
   const [bpDiastolic, setBpDiastolic] = useState(day.bp.diastolic);
 
@@ -32,6 +33,10 @@ export function DayCard({ day, onUpdate }: DayCardProps) {
       title: "Day Completed!",
       description: `Great job completing Day ${day.dayNumber}!`,
     });
+  };
+
+  const handleDayUpdate = (updatedDay: DayPlan) => {
+    onUpdate(updatedDay);
   };
 
   const formatDate = (dateString: string) => {
@@ -64,7 +69,7 @@ export function DayCard({ day, onUpdate }: DayCardProps) {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => setIsEditModalOpen(true)}
             >
               <Edit2 className="w-3 h-3 mr-1" />
               Edit
@@ -131,6 +136,14 @@ export function DayCard({ day, onUpdate }: DayCardProps) {
           </div>
         </div>
       )}
+
+      {/* Edit Day Modal */}
+      <EditDayModal
+        day={day}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleDayUpdate}
+      />
     </div>
   );
 }

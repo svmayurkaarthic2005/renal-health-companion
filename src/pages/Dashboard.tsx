@@ -6,6 +6,7 @@ import { JourneySidebar } from '@/components/JourneySidebar';
 import { HealthPlanInput } from '@/components/HealthPlanInput';
 import { RoadmapCard } from '@/components/RoadmapCard';
 import { DayCard } from '@/components/DayCard';
+import { TimelineContainer } from '@/components/TimelineContainer';
 import { FloatingButtons } from '@/components/FloatingButtons';
 import { ChatWindow } from '@/components/ChatWindow';
 import { DiagnosticHub } from '@/components/DiagnosticHub';
@@ -45,9 +46,9 @@ export default function Dashboard() {
           
           <RoadmapCard />
           
-          {/* Day Cards */}
+          {/* Day Cards with Timeline */}
           {currentPlan && currentPlan.days.length > 0 && (
-            <div className="space-y-4">
+            <TimelineContainer days={currentPlan.days}>
               {currentPlan.days.map((day) => (
                 <DayCard 
                   key={day.id} 
@@ -55,7 +56,7 @@ export default function Dashboard() {
                   onUpdate={handleDayUpdate}
                 />
               ))}
-            </div>
+            </TimelineContainer>
           )}
         </main>
       </div>
