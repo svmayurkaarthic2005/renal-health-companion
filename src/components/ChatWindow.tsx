@@ -53,7 +53,7 @@ export function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.response || data.message || "I've received your message. How else can I help you?",
+        content: data.output || "I've received your message. How else can I help you?",
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, assistantMessage]);
