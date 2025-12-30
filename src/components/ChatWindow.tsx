@@ -20,8 +20,10 @@ export function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
   ]);
   const [input, setInput] = useState('');
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -32,17 +34,41 @@ export function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setIsLoading(true);
 
-    // Simulate assistant response
-    setTimeout(() => {
+    try {
+      const response = await fetch('https://shaven-luz-superideally.ngrok-free.dev/webhook-test/renaiaichat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          timestamp: userMessage.timestamp,
+        }),
+      });
+
+      const data = await response.json();
+      
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: "Thank you for your question! For kidney health, it's important to monitor your protein, sodium, potassium, and phosphorus intake. Would you like specific meal suggestions based on your stage?",
+        content: data.response || data.message || "I've received your message. How else can I help you?",
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, assistantMessage]);
-    }, 1000);
+    } catch (error) {
+      console.error('Webhook error:', error);
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: "Sorry, I couldn't process your request. Please try again.",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -88,8 +114,8 @@ export function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
             className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           />
-          <Button size="sm" onClick={handleSend} className="bg-primary hover:bg-primary/90">
-            <Send className="w-4 h-4" />
+          <Button size="sm" onClick={handleSend} disabled={isLoading} className="bg-primary hover:bg-primary/90">
+            <Send className={cn("w-4 h-4", isLoading && "animate-pulse")} />
           </Button>
         </div>
       </div>
