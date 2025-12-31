@@ -107,7 +107,7 @@ export function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-2">
         <div className="flex gap-2">
           <input
             type="text"
