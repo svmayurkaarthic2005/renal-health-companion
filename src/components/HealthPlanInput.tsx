@@ -97,20 +97,60 @@ export function HealthPlanInput() {
     
     setIsGenerating(true);
     
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const plan = generateMockPlan(prompt);
-    setCurrentPlan(plan);
-    
-    addJourneyItem({
-      id: crypto.randomUUID(),
-      prompt: prompt,
-      createdAt: new Date().toISOString(),
-    });
-    
-    setPrompt('');
-    setIsGenerating(false);
+    try {
+      const response = await fetch('https://shaven-luz-superideally.ngrok-free.dev/webhook-test/main', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: prompt.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate plan');
+      }
+
+      const data = await response.json();
+      
+      // Map webhook response to HealthPlan format
+      const plan = {
+        id: crypto.randomUUID(),
+        prompt: prompt.trim(),
+        intro: 'Your personalized health plan based on your input.',
+        shoppingItems: [],
+        days: data.roadmap.map((day: { day: string; meals: { breakfast: string; lunch: string; dinner: string }; sleep: string; activity: string }, index: number) => ({
+          id: crypto.randomUUID(),
+          dayNumber: index + 1,
+          date: day.day,
+          meals: {
+            breakfast: day.meals.breakfast,
+            lunch: day.meals.lunch,
+            dinner: day.meals.dinner,
+          },
+          sleep: day.sleep,
+          activity: day.activity,
+          bp: { systolic: 120, diastolic: 80 },
+          completed: false,
+        })),
+        createdAt: new Date().toISOString(),
+      };
+
+      setCurrentPlan(plan);
+      
+      addJourneyItem({
+        id: crypto.randomUUID(),
+        prompt: prompt,
+        createdAt: new Date().toISOString(),
+      });
+      
+      setPrompt('');
+      toast.success('Health plan generated successfully!');
+    } catch (error) {
+      console.error('Error generating plan:', error);
+      toast.error('Failed to generate plan. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
