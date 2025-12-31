@@ -116,8 +116,8 @@ export function HealthPlanInput() {
       const plan = {
         id: crypto.randomUUID(),
         prompt: prompt.trim(),
-        intro: 'Your personalized health plan based on your input.',
-        shoppingItems: [],
+        intro: data.overview?.description || 'Your personalized health plan based on your input.',
+        shoppingItems: data.overview?.shopping || [],
         days: data.roadmap.map((day: { day: string; meals: { breakfast: string; lunch: string; dinner: string }; sleep: string; activity: string }, index: number) => ({
           id: crypto.randomUUID(),
           dayNumber: index + 1,
