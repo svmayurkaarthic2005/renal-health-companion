@@ -28,11 +28,49 @@ export function DiagnosticHub({ isOpen, onClose }: DiagnosticHubProps) {
     
     setIsAnalyzing(true);
     
-    // Simulate analysis
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setAnalysisResult("Cholesterol levels are high. Consult a physician for potential dietary or lifestyle changes.");
-    setIsAnalyzing(false);
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const fileData = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+
+      const response = await fetch('https://shaven-luz-superideally.ngrok-free.dev/webhook-test/lab', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          fileData: fileData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze report');
+      }
+
+      const rawData = await response.json();
+      
+      // Handle webhook response format (array with output as JSON string)
+      const data = typeof rawData[0]?.output === 'string' 
+        ? JSON.parse(rawData[0].output) 
+        : rawData;
+      
+      setAnalysisResult(data.result || data.message || JSON.stringify(data));
+    } catch (error) {
+      console.error('Error analyzing report:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze the blood report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleSetAppointment = () => {
