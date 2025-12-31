@@ -110,7 +110,12 @@ export function HealthPlanInput() {
         throw new Error('Failed to generate plan');
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      
+      // The webhook returns an array with output as a JSON string
+      const data = typeof rawData[0]?.output === 'string' 
+        ? JSON.parse(rawData[0].output) 
+        : rawData;
       
       // Map webhook response to HealthPlan format
       const plan = {
