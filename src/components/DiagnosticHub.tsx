@@ -1,9 +1,29 @@
 import { useState } from 'react';
-import { X, Heart, Upload, FlaskConical, ChefHat } from 'lucide-react';
+import { X, Heart, Upload, FlaskConical, ChefHat, AlertCircle, CheckCircle, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
+interface LabResult {
+  test_name: string;
+  value: string;
+  unit: string;
+  normal_range: string;
+  status: string;
+  clinical_note: string;
+}
+
+interface LabAnalysisData {
+  patient_summary: {
+    overall_status: string;
+    key_findings: string[];
+  };
+  results: LabResult[];
+  recommendations: {
+    diet: string[];
+  };
+}
 
 interface DiagnosticHubProps {
   isOpen: boolean;
@@ -12,7 +32,7 @@ interface DiagnosticHubProps {
 
 export function DiagnosticHub({ isOpen, onClose }: DiagnosticHubProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<LabAnalysisData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [appointmentDate, setAppointmentDate] = useState('');
 
@@ -56,11 +76,11 @@ export function DiagnosticHub({ isOpen, onClose }: DiagnosticHubProps) {
       const rawData = await response.json();
       
       // Handle webhook response format (array with output as JSON string)
-      const data = typeof rawData[0]?.output === 'string' 
+      const data: LabAnalysisData = typeof rawData[0]?.output === 'string' 
         ? JSON.parse(rawData[0].output) 
         : rawData;
       
-      setAnalysisResult(data.result || data.message || JSON.stringify(data));
+      setAnalysisResult(data);
     } catch (error) {
       console.error('Error analyzing report:', error);
       toast({
@@ -147,9 +167,83 @@ export function DiagnosticHub({ isOpen, onClose }: DiagnosticHubProps) {
 
               {/* Analysis Result */}
               {analysisResult && (
-                <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                  <p className="font-medium text-warning-foreground mb-1">Analysis Result:</p>
-                  <p className="text-sm text-foreground">{analysisResult}</p>
+                <div className="space-y-4">
+                  {/* Patient Summary */}
+                  <div className={cn(
+                    "rounded-lg p-4 border",
+                    analysisResult.patient_summary.overall_status === "Mild Concern" 
+                      ? "bg-warning/10 border-warning/30" 
+                      : analysisResult.patient_summary.overall_status === "Normal"
+                      ? "bg-success/10 border-success/30"
+                      : "bg-destructive/10 border-destructive/30"
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="w-5 h-5 text-warning" />
+                      <span className="font-semibold text-foreground">
+                        Status: {analysisResult.patient_summary.overall_status}
+                      </span>
+                    </div>
+                    <ul className="text-sm text-foreground space-y-1">
+                      {analysisResult.patient_summary.key_findings.map((finding, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-warning">•</span>
+                          {finding}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Test Results */}
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="bg-muted px-4 py-2 font-medium text-foreground">
+                      Lab Results
+                    </div>
+                    <div className="divide-y divide-border">
+                      {analysisResult.results.map((result, idx) => (
+                        <div key={idx} className="p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-foreground">{result.test_name}</span>
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-medium",
+                              result.status === "Low" 
+                                ? "bg-warning/20 text-warning" 
+                                : result.status === "High"
+                                ? "bg-destructive/20 text-destructive"
+                                : "bg-success/20 text-success"
+                            )}>
+                              {result.status === "Low" && <TrendingDown className="w-3 h-3 inline mr-1" />}
+                              {result.status === "High" && <TrendingUp className="w-3 h-3 inline mr-1" />}
+                              {result.status === "Normal" && <Minus className="w-3 h-3 inline mr-1" />}
+                              {result.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-foreground font-semibold">{result.value} {result.unit}</span>
+                            <span className="text-muted-foreground">Normal: {result.normal_range}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{result.clinical_note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recommendations */}
+                  {analysisResult.recommendations?.diet && (
+                    <div className="bg-success/10 border border-success/30 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-5 h-5 text-success" />
+                        <span className="font-semibold text-foreground">Diet Recommendations</span>
+                      </div>
+                      <ul className="text-sm text-foreground space-y-1">
+                        {analysisResult.recommendations.diet.map((rec, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-success">•</span>
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 
